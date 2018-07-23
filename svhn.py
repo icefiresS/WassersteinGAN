@@ -27,7 +27,7 @@ class MySVHN(data.Dataset):
             self.data, self.labels = self.process_data(split)
             self.data = self.data / 255.
         else:
-            f = gzip.open(os.path.join(os.path.split(__file__)[0], '%spkl.gz' % self.split), 'rb')
+            f = gzip.open(os.path.join(self.root, '%spkl.gz' % self.split), 'rb')
             data_set = pickle.load(f)
             self.data = data_set.pop('images') / 255.
             self.labels = data_set.pop('labels')
