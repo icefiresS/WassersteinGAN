@@ -86,7 +86,7 @@ def calc_gradient_penalty(netD, real_data, fake_data, batch_size):
     if opt.cuda:
         alpha = alpha.cuda()
 
-    interpolates = alpha * real_data + (1 - alpha) * fake_data
+    interpolates = alpha * real_data + (1 - alpha) * fake_data[0:batch_size]
     if opt.cuda:
         interpolates = interpolates.cuda()
     interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
