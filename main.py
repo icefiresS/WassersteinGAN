@@ -56,7 +56,7 @@ cudnn.benchmark = True
 if torch.cuda.is_available() and not opt.cuda:
     print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-dataset = MySVHN('../', split='error1')
+dataset = MySVHN('../', split='error')
 assert dataset
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                          shuffle=True, num_workers=int(opt.workers))
@@ -81,7 +81,7 @@ def weights_init(m):
 
 def calc_gradient_penalty(netD, real_data, fake_data, batch_size):
     alpha = torch.rand(batch_size, 1)
-    alpha = alpha.expand(batch_size, real_data.nelement() / batch_size)
+    alpha = alpha.expand(batch_size, nc * opt.imageSize * opt.imageSize)
     alpha = alpha.contiguous().view(batch_size, nc, opt.imageSize, opt.imageSize)
     if opt.cuda:
         alpha = alpha.cuda()
