@@ -1,14 +1,10 @@
-from __future__ import print_function
 import argparse
 import random
 import torch
-import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
 import torchvision.utils as vutils
 from torch.autograd import Variable
 import os
@@ -42,6 +38,7 @@ parser.add_argument('--mlp_D', action='store_true', help='use MLP for D')
 parser.add_argument('--n_extra_layers', type=int, default=0, help='Number of extra layers on gen and disc')
 parser.add_argument('--experiment', default=None, help='Where to store samples and models')
 parser.add_argument('--adam', action='store_true', help='Whether to use adam (default is rmsprop)')
+parser.add_argument('--lambdap', type=float, default=10)
 opt = parser.parse_args()
 print(opt)
 
@@ -79,6 +76,28 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+
+
+
+def calc_gradient_penalty(netD, real_data, fake_data, batch_size):
+    alpha = torch.rand(batch_size, 1)
+    alpha = alpha.expand(batch_size, real_data.nelement() / batch_size)
+    alpha = alpha.contiguous().view(batch_size, nc, opt.imageSize, opt.imageSize)
+    if opt.cuda:
+        alpha = alpha.cuda()
+
+    interpolates = alpha * real_data + (1 - alpha) * fake_data
+    if opt.cuda:
+        interpolates = interpolates.cuda()
+    interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+    disc_interpolates = netD(interpolates)
+    gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                              grad_outputs=torch.ones(disc_interpolates.size()).cuda(gpu) if opt.cuda else torch.ones(
+                                  disc_interpolates.size()),
+                              create_graph=True, retain_graph=True, only_inputs=True)[0]
+
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * opt.lambdap
+    return gradient_penalty
 
 if opt.noBN:
     netG = dcgan.DCGAN_G_nobn(opt.imageSize, nz, nc, ngf, ngpu, n_extra_layers)
@@ -158,19 +177,20 @@ for epoch in range(opt.niter):
             if opt.cuda:
                 real_cpu = real_cpu.cuda()
             input.resize_as_(real_cpu).copy_(real_cpu)
-            inputv = Variable(input)
+            inputv = torch.autograd.Variable(input)
 
             errD_real = netD(inputv)
             errD_real.backward(one)
 
             # train with fake
             noise.resize_(opt.batchSize, nz, 1, 1).normal_(0, 1)
-            noisev = Variable(noise, volatile = True) # totally freeze netG
-            fake = Variable(netG(noisev).data)
+            noisev = torch.autograd.Variable(noise, volatile = True) # totally freeze netG
+            fake = torch.autograd.Variable(netG(noisev).data)
             inputv = fake
             errD_fake = netD(inputv)
             errD_fake.backward(mone)
-            errD = errD_real - errD_fake
+            gradient_penalty = calc_gradient_penalty(netD, inputv.data, fake.data, batch_size)
+            errD = errD_real - errD_fake + gradient_penalty
             optimizerD.step()
 
         ############################

@@ -1,0 +1,4 @@
+models/__pycache__/mlp.cpython-36.pyc
+models/__pycache__/__init__.cpython-36.pyc
+models/__pycache__/dcgan.cpython-36.pyc
+__pycache__/svhn.cpython-36.pyc

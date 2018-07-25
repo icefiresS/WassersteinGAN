@@ -12,14 +12,16 @@ import numpy as np
 class MySVHN(data.Dataset):
     
     def __init__(self, root, split='train', process=False):
-        self.split_list = {'train', 'test', 'extra', 'error'}
+        self.split_list = {'train', 'test', 'extra', 'error', 
+                    'error0', 'error1', 'error2', 'error3', 'error4', 
+                    'error5', 'error6', 'error7', 'error8', 'error9'}
         self.root = os.path.expanduser(root)
         self.split = split
         self.process = process
 
-        if self.split == 'error':
+        if self.split.startswith('error'):
             self.process = False
-
+        
         if self.split not in self.split_list:
             raise ValueError('Wrong split entered!')
         
@@ -27,7 +29,7 @@ class MySVHN(data.Dataset):
             self.data, self.labels = self.process_data(split)
             self.data = self.data / 255.
         else:
-            f = gzip.open(os.path.join(self.root, '%spkl.gz' % self.split), 'rb')
+            f = gzip.open(os.path.join(os.path.split(__file__)[0], '%spkl.gz' % self.split), 'rb')
             data_set = pickle.load(f)
             self.data = data_set.pop('images') / 255.
             self.labels = data_set.pop('labels')
