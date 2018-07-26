@@ -80,13 +80,13 @@ def weights_init(m):
 
 
 def calc_gradient_penalty(netD, real_data, fake_data, batch_size):
-    alpha = torch.rand(batch_size, 1)
-    alpha = alpha.expand(batch_size, nc * opt.imageSize * opt.imageSize)
-    alpha = alpha.contiguous().view(batch_size, nc, opt.imageSize, opt.imageSize)
+    alpha = torch.rand(opt.batchSize, 1)
+    alpha = alpha.expand(opt.batchSize, nc * opt.imageSize * opt.imageSize)
+    alpha = alpha.contiguous().view(opt.batchSize, nc, opt.imageSize, opt.imageSize)
     if opt.cuda:
         alpha = alpha.cuda()
 
-    interpolates = alpha * real_data + (1 - alpha) * fake_data[0:batch_size]
+    interpolates = alpha * real_data + (1 - alpha) * fake_data
     if opt.cuda:
         interpolates = interpolates.cuda()
     interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
