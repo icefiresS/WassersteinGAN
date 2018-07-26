@@ -37,7 +37,10 @@ class MySVHN(data.Dataset):
 
     def __getitem__(self, index):
         img, target = self.data[index], int(self.labels[index])
-        return torch.Tensor(img), target
+        img = torch.Tensor(img)
+        img_gray = 0.299 * img[0] + 0.587 * img[1] + 0.114 * img[2]
+        img_gray = img_gray.view(1, 32, 32) 
+        return img_gray, target
 
     
     def __len__(self):
